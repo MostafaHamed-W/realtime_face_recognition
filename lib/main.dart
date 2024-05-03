@@ -1,4 +1,3 @@
-
 import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -14,7 +13,6 @@ import 'ML/Recognition.dart';
 import 'ML/Recognition.dart';
 import 'ML/Recognizer.dart';
 
-
 late List<CameraDescription> cameras;
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,8 +24,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: MyHomePage(
-      ),
+      home: MyHomePage(),
     );
   }
 }
@@ -48,9 +45,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   //TODO declare face detector
 
-
   //TODO declare face recognizer
-
 
   @override
   void initState() {
@@ -66,14 +61,14 @@ class _MyHomePageState extends State<MyHomePage> {
 
   //TODO code to initialize the camera feed
   initializeCamera() async {
-    controller = CameraController(description, ResolutionPreset.medium);
+    controller = CameraController(description, ResolutionPreset.ultraHigh);
     await controller.initialize().then((_) {
       if (!mounted) {
         return;
       }
       controller.startImageStream((image) => {
-        if (!isBusy) {isBusy = true, frame = image, doFaceDetectionOnFrame()}
-      });
+            if (!isBusy) {isBusy = true, frame = image, doFaceDetectionOnFrame()}
+          });
     });
   }
 
@@ -91,7 +86,6 @@ class _MyHomePageState extends State<MyHomePage> {
     //TODO convert frame into InputImage format
 
     //TODO pass InputImage to face detection model and detect faces
-
 
     //TODO perform face recognition on detected faces
 
@@ -168,7 +162,6 @@ class _MyHomePageState extends State<MyHomePage> {
   //     ),
   //   );
   // }
-
 
   // TODO method to convert CameraImage to Image
   // img.Image convertYUV420ToImage(CameraImage cameraImage) {
@@ -306,7 +299,6 @@ class _MyHomePageState extends State<MyHomePage> {
     List<Widget> stackChildren = [];
     size = MediaQuery.of(context).size;
     if (controller != null) {
-
       //TODO View for displaying the live camera footage
       stackChildren.add(
         Positioned(
@@ -317,9 +309,12 @@ class _MyHomePageState extends State<MyHomePage> {
           child: Container(
             child: (controller.value.isInitialized)
                 ? AspectRatio(
-              aspectRatio: controller.value.aspectRatio,
-              child: CameraPreview(controller),
-            )
+                    aspectRatio: controller.value.aspectRatio,
+                    child: Align(
+                      alignment: Alignment.topCenter,
+                      child: CameraPreview(controller),
+                    ),
+                  )
                 : Container(),
           ),
         ),
@@ -338,13 +333,13 @@ class _MyHomePageState extends State<MyHomePage> {
 
     //TODO View for displaying the bar to switch camera direction or for registering faces
     stackChildren.add(Positioned(
-      top: size.height - 140,
+      top: size.height - 200,
       left: 0,
       width: size.width,
       height: 80,
       child: Card(
         margin: const EdgeInsets.only(left: 20, right: 20),
-        color: Colors.blue,
+        color: Colors.black,
         child: Center(
           child: Container(
             child: Column(
@@ -375,9 +370,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       ),
                       iconSize: 40,
                       color: Colors.black,
-                      onPressed: () {
-
-                      },
+                      onPressed: () {},
                     )
                   ],
                 ),
@@ -393,7 +386,7 @@ class _MyHomePageState extends State<MyHomePage> {
         backgroundColor: Colors.black,
         body: Container(
             margin: const EdgeInsets.only(top: 0),
-            color: Colors.black,
+            // color: Colors.black,
             child: Stack(
               children: stackChildren,
             )),
