@@ -95,6 +95,7 @@ class _MyHomePageState extends State<MyHomePage> {
     //TODO perform face recognition on detected faces
 
     setState(() {
+      _scanResults = faces;
       isBusy = false;
     });
   }
@@ -250,21 +251,19 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   // TODO Show rectangles around detected faces
-  // Widget buildResult() {
-  //   if (_scanResults == null ||
-  //       controller == null ||
-  //       !controller.value.isInitialized) {
-  //     return const Center(child: Text('Camera is not initialized'));
-  //   }
-  //   final Size imageSize = Size(
-  //     controller.value.previewSize!.height,
-  //     controller.value.previewSize!.width,
-  //   );
-  //   CustomPainter painter = FaceDetectorPainter(imageSize, _scanResults, camDirec);
-  //   return CustomPaint(
-  //     painter: painter,
-  //   );
-  // }
+  Widget buildResult() {
+    if (_scanResults == null || controller == null || !controller.value.isInitialized) {
+      return const Center(child: Text('Camera is not initialized'));
+    }
+    final Size imageSize = Size(
+      controller.value.previewSize!.height,
+      controller.value.previewSize!.width,
+    );
+    CustomPainter painter = FaceDetectorPainter(imageSize, _scanResults, camDirec);
+    return CustomPaint(
+      painter: painter,
+    );
+  }
 
   //TODO toggle camera direction
   void _toggleCameraDirection() async {
@@ -300,7 +299,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 ? AspectRatio(
                     aspectRatio: controller.value.aspectRatio,
                     child: Align(
-                      alignment: Alignment.topCenter,
+                      // alignment: Alignment.topCenter,
                       child: CameraPreview(controller),
                     ),
                   )
@@ -310,14 +309,15 @@ class _MyHomePageState extends State<MyHomePage> {
       );
 
       //TODO View for displaying rectangles around detected aces
-      // stackChildren.add(
-      //   Positioned(
-      //       top: 0.0,
-      //       left: 0.0,
-      //       width: size.width,
-      //       height: size.height,
-      //       child: buildResult()),
-      // );
+      stackChildren.add(
+        Positioned(
+          top: 0.0,
+          left: 0.0,
+          width: size.width,
+          height: size.height,
+          child: buildResult(),
+        ),
+      );
     }
 
     //TODO View for displaying the bar to switch camera direction or for registering faces
@@ -382,53 +382,52 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 }
 
-// class FaceDetectorPainter extends CustomPainter {
-//   FaceDetectorPainter(this.absoluteImageSize, this.faces, this.camDire2);
-//
-//   final Size absoluteImageSize;
-//   final List<Face> faces;
-//   CameraLensDirection camDire2;
-//
-//   @override
-//   void paint(Canvas canvas, Size size) {
-//     final double scaleX = size.width / absoluteImageSize.width;
-//     final double scaleY = size.height / absoluteImageSize.height;
-//
-//     final Paint paint = Paint()
-//       ..style = PaintingStyle.stroke
-//       ..strokeWidth = 2.0
-//       ..color = Colors.indigoAccent;
-//
-//     for (Face face in faces) {
-//       canvas.drawRect(
-//         Rect.fromLTRB(
-//           camDire2 == CameraLensDirection.front
-//               ? (absoluteImageSize.width - face.boundingBox.right) * scaleX
-//               : face.boundingBox.left * scaleX,
-//           face.boundingBox.top * scaleY,
-//           camDire2 == CameraLensDirection.front
-//               ? (absoluteImageSize.width - face.boundingBox.left) * scaleX
-//               : face.boundingBox.right * scaleX,
-//           face.boundingBox.bottom * scaleY,
-//         ),
-//         paint,
-//       );
-//
-//       // TextSpan span = TextSpan(
-//       //     style: const TextStyle(color: Colors.white, fontSize: 20),
-//       //     text: "${face.name}  ${face.distance.toStringAsFixed(2)}");
-//       // TextPainter tp = TextPainter(
-//       //     text: span,
-//       //     textAlign: TextAlign.left,
-//       //     textDirection: TextDirection.ltr);
-//       // tp.layout();
-//       // tp.paint(canvas, Offset(face.location.left*scaleX, face.location.top*scaleY));
-//     }
-//
-//   }
-//
-//   @override
-//   bool shouldRepaint(FaceDetectorPainter oldDelegate) {
-//     return true;
-//   }
-// }
+class FaceDetectorPainter extends CustomPainter {
+  FaceDetectorPainter(this.absoluteImageSize, this.faces, this.camDire2);
+
+  final Size absoluteImageSize;
+  final List<Face> faces;
+  CameraLensDirection camDire2;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final double scaleX = size.width / absoluteImageSize.width;
+    final double scaleY = size.height / absoluteImageSize.height;
+
+    final Paint paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.0
+      ..color = Colors.indigoAccent;
+
+    for (Face face in faces) {
+      canvas.drawRect(
+        Rect.fromLTRB(
+          camDire2 == CameraLensDirection.front
+              ? (absoluteImageSize.width - face.boundingBox.right) * scaleX
+              : face.boundingBox.left * scaleX,
+          face.boundingBox.top * scaleY,
+          camDire2 == CameraLensDirection.front
+              ? (absoluteImageSize.width - face.boundingBox.left) * scaleX
+              : face.boundingBox.right * scaleX,
+          face.boundingBox.bottom * scaleY,
+        ),
+        paint,
+      );
+
+      // TextSpan span = TextSpan(
+      //     style: const TextStyle(color: Colors.white, fontSize: 20),
+      //     text: "${face.name}  ${face.distance.toStringAsFixed(2)}");
+      // TextPainter tp = TextPainter(
+      //     text: span,
+      //     textAlign: TextAlign.left,
+      //     textDirection: TextDirection.ltr);
+      // tp.layout();
+      // tp.paint(canvas, Offset(face.location.left*scaleX, face.location.top*scaleY));
+    }
+  }
+
+  @override
+  bool shouldRepaint(FaceDetectorPainter oldDelegate) {
+    return true;
+  }
+}
