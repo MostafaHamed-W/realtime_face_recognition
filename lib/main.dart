@@ -1,8 +1,10 @@
+import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
+import 'package:flutter/services.dart';
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import 'package:image/image.dart' as img;
 import 'package:realtime_face_recognition/ML/Recognition.dart';
@@ -44,6 +46,7 @@ class _MyHomePageState extends State<MyHomePage> {
   late List<Recognition> recognitions = [];
 
   //TODO declare face detector
+  late FaceDetector detector;
 
   //TODO declare face recognizer
 
@@ -52,7 +55,7 @@ class _MyHomePageState extends State<MyHomePage> {
     super.initState();
 
     //TODO initialize face detector
-
+    detector = FaceDetector(options: FaceDetectorOptions(performanceMode: FaceDetectorMode.accurate));
     //TODO initialize face recognizer
 
     //TODO initialize camera footage
@@ -61,7 +64,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   //TODO code to initialize the camera feed
   initializeCamera() async {
-    controller = CameraController(description, ResolutionPreset.ultraHigh);
+    controller = CameraController(description, ResolutionPreset.high);
     await controller.initialize().then((_) {
       if (!mounted) {
         return;
@@ -84,8 +87,10 @@ class _MyHomePageState extends State<MyHomePage> {
   CameraImage? frame;
   doFaceDetectionOnFrame() async {
     //TODO convert frame into InputImage format
-
+    InputImage inputImage = getInputImage();
     //TODO pass InputImage to face detection model and detect faces
+    List<Face> faces = await detector.processImage(inputImage);
+    for (var face in faces) print(face.boundingBox.toString());
 
     //TODO perform face recognition on detected faces
 
@@ -208,57 +213,41 @@ class _MyHomePageState extends State<MyHomePage> {
   // }
 
   // //TODO convert CameraImage to InputImage
-  //
-  // final _orientations = {
-  //   DeviceOrientation.portraitUp: 0,
-  //   DeviceOrientation.landscapeLeft: 90,
-  //   DeviceOrientation.portraitDown: 180,
-  //   DeviceOrientation.landscapeRight: 270,
-  // };
-  //
-  //
-  // InputImage? getInputImage() {
-  //   final camera =
-  //   camDirec == CameraLensDirection.front ? cameras[1] : cameras[0];
-  //   final sensorOrientation = camera.sensorOrientation;
-  //
-  //   InputImageRotation? rotation;
-  //   if (Platform.isIOS) {
-  //     rotation = InputImageRotationValue.fromRawValue(sensorOrientation);
-  //   } else if (Platform.isAndroid) {
-  //     var rotationCompensation =
-  //     _orientations[controller!.value.deviceOrientation];
-  //     if (rotationCompensation == null) return null;
-  //     if (camera.lensDirection == CameraLensDirection.front) {
-  //       // front-facing
-  //       rotationCompensation = (sensorOrientation + rotationCompensation) % 360;
-  //     } else {
-  //       // back-facing
-  //       rotationCompensation =
-  //           (sensorOrientation - rotationCompensation + 360) % 360;
-  //     }
-  //     rotation = InputImageRotationValue.fromRawValue(rotationCompensation);
-  //   }
-  //   if (rotation == null) return null;
-  //
-  //   final format = InputImageFormatValue.fromRawValue(frame!.format.raw);
-  //   if (format == null ||
-  //       (Platform.isAndroid && format != InputImageFormat.nv21) ||
-  //       (Platform.isIOS && format != InputImageFormat.bgra8888)) return null;
-  //
-  //   if (frame!.planes.length != 1) return null;
-  //   final plane = frame!.planes.first;
-  //
-  //   return InputImage.fromBytes(
-  //     bytes: plane.bytes,
-  //     metadata: InputImageMetadata(
-  //       size: Size(frame!.width.toDouble(), frame!.height.toDouble()),
-  //       rotation: rotation,
-  //       format: format,
-  //       bytesPerRow: plane.bytesPerRow,
-  //     ),
-  //   );
-  // }
+  InputImage getInputImage() {
+    final WriteBuffer allBytes = WriteBuffer();
+    for (final Plane plane in frame!.planes) {
+      allBytes.putUint8List(plane.bytes);
+    }
+    final bytes = allBytes.done().buffer.asUint8List();
+    final Size imageSize = Size(frame!.width.toDouble(), frame!.height.toDouble());
+    final camera = description;
+    final imageRotation = InputImageRotationValue.fromRawValue(camera.sensorOrientation);
+    // if (imageRotation == null) return;
+
+    final inputImageFormat = InputImageFormatValue.fromRawValue(frame!.format.raw);
+    // if (inputImageFormat == null) return null;
+
+    final planeData = frame!.planes.map(
+      (Plane plane) {
+        return InputImagePlaneMetadata(
+          bytesPerRow: plane.bytesPerRow,
+          height: plane.height,
+          width: plane.width,
+        );
+      },
+    ).toList();
+
+    final inputImageData = InputImageData(
+      size: imageSize,
+      imageRotation: imageRotation!,
+      inputImageFormat: inputImageFormat!,
+      planeData: planeData,
+    );
+
+    final inputImage = InputImage.fromBytes(bytes: bytes, inputImageData: inputImageData);
+
+    return inputImage;
+  }
 
   // TODO Show rectangles around detected faces
   // Widget buildResult() {
@@ -333,13 +322,13 @@ class _MyHomePageState extends State<MyHomePage> {
 
     //TODO View for displaying the bar to switch camera direction or for registering faces
     stackChildren.add(Positioned(
-      top: size.height - 200,
+      top: size.height - 140,
       left: 0,
       width: size.width,
       height: 80,
       child: Card(
         margin: const EdgeInsets.only(left: 20, right: 20),
-        color: Colors.black,
+        color: Colors.blue,
         child: Center(
           child: Container(
             child: Column(
@@ -381,16 +370,14 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
     ));
 
-    return SafeArea(
-      child: Scaffold(
-        backgroundColor: Colors.black,
-        body: Container(
-            margin: const EdgeInsets.only(top: 0),
-            // color: Colors.black,
-            child: Stack(
-              children: stackChildren,
-            )),
-      ),
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Container(
+          margin: const EdgeInsets.only(top: 0),
+          color: Colors.black,
+          child: Stack(
+            children: stackChildren,
+          )),
     );
   }
 }
